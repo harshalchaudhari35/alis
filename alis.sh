@@ -620,12 +620,13 @@ function partition() {
     wipefs -a -f $PARTITION_HOME || true
     wipefs -a -f $DEVICE_ROOT || true
 
-    # boot partition
+    # create boot and home partition
     if [ "$BIOS_TYPE" == "uefi" ]; then
         mkfs.fat -n ESP -F32 $PARTITION_BOOT
     fi
     if [ "$BIOS_TYPE" == "bios" ]; then
         mkfs.ext4 -L boot $PARTITION_BOOT
+        mkfs.ext4 -L home $PARTITION_HOME
     fi
     # exotic fs root partition
     if [ "$FILE_SYSTEM_TYPE" == "f2fs" -o "$FILE_SYSTEM_TYPE" == "reiserfs" ]; then
