@@ -45,8 +45,10 @@ ASCIINEMA=""
 BIOS_TYPE=""
 PARTITION_BOOT=""
 PARTITION_ROOT=""
+PARTITION_HOME=""
 PARTITION_BOOT_NUMBER=""
 PARTITION_ROOT_NUMBER=""
+PARTITION_HOME_NUMBER=""
 DEVICE_ROOT=""
 DEVICE_LVM=""
 LUKS_DEVICE_NAME="cryptroot"
@@ -58,8 +60,10 @@ ESP_DIRECTORY=""
 #PARTITION_BOOT_NUMBER=0
 UUID_BOOT=""
 UUID_ROOT=""
+UUID_HOME=""
 PARTUUID_BOOT=""
 PARTUUID_ROOT=""
+PARTUUID_HOME=""
 DEVICE_SATA=""
 DEVICE_NVME=""
 DEVICE_MMC=""
@@ -89,6 +93,7 @@ function sanitize_variables() {
     PARTITION_CUSTOM_PARTED_BIOS=$(sanitize_variable "$PARTITION_CUSTOM_PARTED_BIOS")
     PARTITION_CUSTOMMANUAL_BOOT=$(sanitize_variable "$PARTITION_CUSTOMMANUAL_BOOT")
     PARTITION_CUSTOMMANUAL_ROOT=$(sanitize_variable "$PARTITION_CUSTOMMANUAL_ROOT")
+    PARTITION_CUSTOMMANUAL_HOME=$(sanitize_variable "$PARTITION_CUSTOMMANUAL_HOME")
     FILE_SYSTEM_TYPE=$(sanitize_variable "$FILE_SYSTEM_TYPE")
     SWAP_SIZE=$(sanitize_variable "$SWAP_SIZE")
     KERNELS=$(sanitize_variable "$KERNELS")
@@ -135,6 +140,7 @@ function check_variables() {
     if [ "$PARTITION_MODE" == "custom" -o "$PARTITION_MODE" == "manual" ]; then
         check_variables_value "PARTITION_CUSTOMMANUAL_BOOT" "$PARTITION_CUSTOMMANUAL_BOOT"
         check_variables_value "PARTITION_CUSTOMMANUAL_ROOT" "$PARTITION_CUSTOMMANUAL_ROOT"
+        check_variables_value "PARTITION_CUSTOMMANUAL_HOME" "$PARTITION_CUSTOMMANUAL_HOME"
     fi
     check_variables_equals "WIFI_KEY" "WIFI_KEY_RETYPE" "$WIFI_KEY" "$WIFI_KEY_RETYPE"
     check_variables_value "PING_HOSTNAME" "$PING_HOSTNAME"
@@ -525,17 +531,22 @@ function partition() {
     if [ "$PARTITION_MODE" == "custom" -o "$PARTITION_MODE" == "manual" ]; then
         PARTITION_BOOT="$PARTITION_CUSTOMMANUAL_BOOT"
         PARTITION_ROOT="$PARTITION_CUSTOMMANUAL_ROOT"
+        PARTITION_HOME="$PARTITION_CUSTOMMANUAL_HOME"
         DEVICE_ROOT="${PARTITION_ROOT}"
     fi
 
     PARTITION_BOOT_NUMBER="$PARTITION_BOOT"
     PARTITION_ROOT_NUMBER="$PARTITION_ROOT"
+    PARTITION_HOME_NUMBER="$PARTITION_HOME"
     PARTITION_BOOT_NUMBER="${PARTITION_BOOT_NUMBER//\/dev\/sda/}"
     PARTITION_BOOT_NUMBER="${PARTITION_BOOT_NUMBER//\/dev\/nvme0n1p/}"
     PARTITION_BOOT_NUMBER="${PARTITION_BOOT_NUMBER//\/dev\/mmcblk0p/}"
     PARTITION_ROOT_NUMBER="${PARTITION_ROOT_NUMBER//\/dev\/sda/}"
     PARTITION_ROOT_NUMBER="${PARTITION_ROOT_NUMBER//\/dev\/nvme0n1p/}"
     PARTITION_ROOT_NUMBER="${PARTITION_ROOT_NUMBER//\/dev\/mmcblk0p/}"
+    PARTITION_HOME_NUMBER="${PARTITION_HOME_NUMBER//\/dev\/sda/}"
+    PARTITION_HOME_NUMBER="${PARTITION_HOME_NUMBER//\/dev\/nvme0n1p/}"
+    PARTITION_HOME_NUMBER="${PARTITION_HOME_NUMBER//\/dev\/mmcblk0p/}"
 
     # partition
     if [ "$PARTITION_MODE" == "auto" ]; then
@@ -606,14 +617,17 @@ function partition() {
 
     # format
     wipefs -a -f $PARTITION_BOOT || true
+    wipefs -a -f $PARTITION_HOME || true
     wipefs -a -f $DEVICE_ROOT || true
 
+    # boot partition
     if [ "$BIOS_TYPE" == "uefi" ]; then
         mkfs.fat -n ESP -F32 $PARTITION_BOOT
     fi
     if [ "$BIOS_TYPE" == "bios" ]; then
         mkfs.ext4 -L boot $PARTITION_BOOT
     fi
+    # exotic fs root partition
     if [ "$FILE_SYSTEM_TYPE" == "f2fs" -o "$FILE_SYSTEM_TYPE" == "reiserfs" ]; then
         mkfs."$FILE_SYSTEM_TYPE" -l root $DEVICE_ROOT
     else
@@ -623,10 +637,12 @@ function partition() {
     # options
     PARTITION_OPTIONS_BOOT="defaults"
     PARTITION_OPTIONS_ROOT="defaults"
+    PARTITION_OPTIONS_HOME="defaults"
 
     if [ "$DEVICE_TRIM" == "true" ]; then
         PARTITION_OPTIONS_BOOT="$PARTITION_OPTIONS_BOOT,noatime"
         PARTITION_OPTIONS_ROOT="$PARTITION_OPTIONS_ROOT,noatime"
+        PARTITION_OPTIONS_HOME="$PARTITION_OPTIONS_ROOT,noatime"
         if [ "$FILE_SYSTEM_TYPE" == "f2fs" ]; then
             PARTITION_OPTIONS_ROOT="$PARTITION_OPTIONS_ROOT,nodiscard"
         fi
@@ -648,11 +664,15 @@ function partition() {
         mount -o "subvol=home,$PARTITION_OPTIONS_ROOT,compress=zstd" "$DEVICE_ROOT" /mnt/home
         mount -o "subvol=var,$PARTITION_OPTIONS_ROOT,compress=zstd" "$DEVICE_ROOT" /mnt/var
         mount -o "subvol=snapshots,$PARTITION_OPTIONS_ROOT,compress=zstd" "$DEVICE_ROOT" /mnt/snapshots
+    # ext4 and others
     else
         mount -o "$PARTITION_OPTIONS_ROOT" "$DEVICE_ROOT" /mnt
 
         mkdir /mnt/boot
         mount -o "$PARTITION_OPTIONS_BOOT" "$PARTITION_BOOT" /mnt/boot
+
+        mkdir /mnt/home
+        mount -o "$PARTITION_OPTIONS_HOME" "$PARTITION_HOME" /mnt/home
     fi
 
     # swap
@@ -673,8 +693,10 @@ function partition() {
     ESP_DIRECTORY=/boot
     UUID_BOOT=$(blkid -s UUID -o value $PARTITION_BOOT)
     UUID_ROOT=$(blkid -s UUID -o value $PARTITION_ROOT)
+    UUID_HOME=$(blkid -s UUID -o value $PARTITION_HOME)
     PARTUUID_BOOT=$(blkid -s PARTUUID -o value $PARTITION_BOOT)
     PARTUUID_ROOT=$(blkid -s PARTUUID -o value $PARTITION_ROOT)
+    PARTUUID_HOME=$(blkid -s PARTUUID -o value $PARTITION_HOME)
 }
 
 function install() {
