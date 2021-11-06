@@ -1,5 +1,14 @@
 # alis
 
+```
+#                         # Start the system with latest Arch Linux installation media
+# loadkeys us       # Load keyboard keymap, eg. loadkeys es, loadkeys us, loadkeys de
+# curl -sL https://git.io/JPhJp | bash     # Download alis scripts
+# vim alis.conf           # Edit configuration and change variables values with your preferences (system configuration)
+# ./alis.sh               # Start installation
+```
+
+
 ![Arch Linux](https://img.shields.io/badge/-ArchLinux-black?logo=arch-linux)
 ![Bash](https://img.shields.io/badge/sh-bash-black)
 
