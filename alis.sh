@@ -623,6 +623,8 @@ function partition() {
     # create boot and home partition
     if [ "$BIOS_TYPE" == "uefi" ]; then
         mkfs.fat -n ESP -F32 $PARTITION_BOOT
+        mkfs.ext4 -L home $PARTITION_HOME
+
     fi
     if [ "$BIOS_TYPE" == "bios" ]; then
         mkfs.ext4 -L boot $PARTITION_BOOT
