@@ -237,8 +237,8 @@ function facts() {
     fi
 }
 
-function check_facts() {
-}
+# function check_facts() {
+# }
 
 function prepare() {
     prepare_partition
@@ -401,7 +401,7 @@ function main() {
     warning
     init
     facts
-    check_facts
+    # check_facts
     prepare
     partition
     #recovery
