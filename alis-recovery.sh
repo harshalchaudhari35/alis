@@ -22,8 +22,8 @@ set -e
 # improvements and bugs fill an issue in GitHub or make a pull request.
 # Pull Request are welcome!
 #
-# If you test it in real hardware please send me an email to pico.dev@gmail.com with
 # the machine description and tell me if somethig goes wrong or all works fine.
+# If you test it in real hardware please send me an email to pico.dev@gmail.com with
 #
 # Please, don't ask for support for this script in Arch Linux forums, first read
 # the Arch Linux wiki [1], the Installation Guide [2] and the General
@@ -49,8 +49,10 @@ ASCIINEMA=""
 BIOS_TYPE=""
 PARTITION_BOOT=""
 PARTITION_ROOT=""
+PARTITION_HOME=""
 PARTITION_BOOT_NUMBER=""
 PARTITION_ROOT_NUMBER=""
+PARTITION_HOME_NUMBER=""
 DEVICE_ROOT=""
 DEVICE_LVM=""
 LUKS_DEVICE_NAME="cryptroot"
@@ -61,8 +63,10 @@ ESP_DIRECTORY=""
 #PARTITION_BOOT_NUMBER=0
 UUID_BOOT=""
 UUID_ROOT=""
+UUID_HOME=""
 PARTUUID_BOOT=""
 PARTUUID_ROOT=""
+PARTUUID_HOME=""
 DEVICE_SATA=""
 DEVICE_NVME=""
 DEVICE_MMC=""
@@ -91,6 +95,7 @@ function sanitize_variables() {
     PARTITION_MODE=$(sanitize_variable "$PARTITION_MODE")
     PARTITION_CUSTOMMANUAL_BOOT=$(sanitize_variable "$PARTITION_CUSTOMMANUAL_BOOT")
     PARTITION_CUSTOMMANUAL_ROOT=$(sanitize_variable "$PARTITION_CUSTOMMANUAL_ROOT")
+    PARTITION_CUSTOMMANUAL_HOME=$(sanitize_variable "$PARTITION_CUSTOMMANUAL_HOME")
 }
 
 function sanitize_variable() {
@@ -115,6 +120,7 @@ function check_variables() {
     if [ "$PARTITION_MODE" == "custom" -o "$PARTITION_MODE" == "manual" ]; then
         check_variables_value "PARTITION_CUSTOMMANUAL_BOOT" "$PARTITION_CUSTOMMANUAL_BOOT"
         check_variables_value "PARTITION_CUSTOMMANUAL_ROOT" "$PARTITION_CUSTOMMANUAL_ROOT"
+        check_variables_value "PARTITION_CUSTOMMANUAL_HOME" "$PARTITION_CUSTOMMANUAL_HOME"
     fi
     if [ "$LVM" == "true" ]; then
         check_variables_list "PARTITION_MODE" "$PARTITION_MODE" "auto" "true"
@@ -334,17 +340,22 @@ function partition() {
     if [ "$PARTITION_MODE" == "custom" -o "$PARTITION_MODE" == "manual" ]; then
         PARTITION_BOOT="$PARTITION_CUSTOMMANUAL_BOOT"
         PARTITION_ROOT="$PARTITION_CUSTOMMANUAL_ROOT"
+        PARTITION_HOME="$PARTITION_CUSTOMMANUAL_HOME"
         DEVICE_ROOT="${PARTITION_ROOT}"
     fi
 
     PARTITION_BOOT_NUMBER="$PARTITION_BOOT"
     PARTITION_ROOT_NUMBER="$PARTITION_ROOT"
+    PARTITION_HOME_NUMBER="$PARTITION_HOME"
     PARTITION_BOOT_NUMBER="${PARTITION_BOOT_NUMBER//\/dev\/sda/}"
     PARTITION_BOOT_NUMBER="${PARTITION_BOOT_NUMBER//\/dev\/nvme0n1p/}"
     PARTITION_BOOT_NUMBER="${PARTITION_BOOT_NUMBER//\/dev\/mmcblk0p/}"
     PARTITION_ROOT_NUMBER="${PARTITION_ROOT_NUMBER//\/dev\/sda/}"
     PARTITION_ROOT_NUMBER="${PARTITION_ROOT_NUMBER//\/dev\/nvme0n1p/}"
     PARTITION_ROOT_NUMBER="${PARTITION_ROOT_NUMBER//\/dev\/mmcblk0p/}"
+    PARTITION_HOME_NUMBER="${PARTITION_HOME_NUMBER//\/dev\/sda/}"
+    PARTITION_HOME_NUMBER="${PARTITION_HOME_NUMBER//\/dev\/nvme0n1p/}"
+    PARTITION_HOME_NUMBER="${PARTITION_HOME_NUMBER//\/dev\/mmcblk0p/}"
 
     # luks and lvm
     if [ -n "$LUKS_PASSWORD" ]; then
@@ -375,6 +386,7 @@ function partition() {
     else
         mount -o "$PARTITION_OPTIONS" $DEVICE_ROOT /mnt
         mount -o "$PARTITION_OPTIONS" $PARTITION_BOOT /mnt/boot
+        mount -o "$PARTITION_OPTIONS" $PARTITION_HOME /mnt/home
     fi
 }
 
