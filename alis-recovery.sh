@@ -113,10 +113,10 @@ function check_variables() {
     check_variables_boolean "LVM" "$LVM"
     check_variables_equals "LUKS_PASSWORD" "LUKS_PASSWORD_RETYPE" "$LUKS_PASSWORD" "$LUKS_PASSWORD_RETYPE"
     check_variables_list "PARTITION_MODE" "$PARTITION_MODE" "auto custom manual" "true"
-    if [ "$PARTITION_MODE" == "custom" ]; then
-        check_variables_value "PARTITION_CUSTOM_PARTED_UEFI" "$PARTITION_CUSTOM_PARTED_UEFI"
-        check_variables_value "PARTITION_CUSTOM_PARTED_BIOS" "$PARTITION_CUSTOM_PARTED_BIOS"
-    fi
+    # if [ "$PARTITION_MODE" == "custom" ]; then
+    #     check_variables_value "PARTITION_CUSTOM_PARTED_UEFI" "$PARTITION_CUSTOM_PARTED_UEFI"
+    #     check_variables_value "PARTITION_CUSTOM_PARTED_BIOS" "$PARTITION_CUSTOM_PARTED_BIOS"
+    # fi
     if [ "$PARTITION_MODE" == "custom" -o "$PARTITION_MODE" == "manual" ]; then
         check_variables_value "PARTITION_CUSTOMMANUAL_BOOT" "$PARTITION_CUSTOMMANUAL_BOOT"
         check_variables_value "PARTITION_CUSTOMMANUAL_ROOT" "$PARTITION_CUSTOMMANUAL_ROOT"
@@ -332,10 +332,10 @@ function partition() {
                 DEVICE_ROOT="${DEVICE}p2"
             fi
         fi
-    elif [ "$PARTITION_MODE" == "custom" ]; then
-        PARTITION_PARTED_UEFI="$PARTITION_CUSTOM_PARTED_UEFI"
-        PARTITION_PARTED_BIOS="$PARTITION_CUSTOM_PARTED_BIOS"
-    fi
+    # elif [ "$PARTITION_MODE" == "custom" ]; then
+    #     PARTITION_PARTED_UEFI="$PARTITION_CUSTOM_PARTED_UEFI"
+    #     PARTITION_PARTED_BIOS="$PARTITION_CUSTOM_PARTED_BIOS"
+    # fi
 
     if [ "$PARTITION_MODE" == "custom" -o "$PARTITION_MODE" == "manual" ]; then
         PARTITION_BOOT="$PARTITION_CUSTOMMANUAL_BOOT"
